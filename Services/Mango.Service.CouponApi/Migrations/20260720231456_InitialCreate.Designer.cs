@@ -2,16 +2,16 @@
 using Mango.Service.CouponApi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace Mango.Service.CouponApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260709230215_InitialCreate")]
+    [Migration("20260720231456_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,31 +20,47 @@ namespace Mango.Service.CouponApi.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.9")
-                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+                .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
-            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("Mango.Service.CouponApi.Models.Coupon", b =>
                 {
                     b.Property<int>("CouponId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("int");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CouponId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CouponId"));
 
                     b.Property<string>("CouponCode")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<double>("DiscountAmount")
-                        .HasColumnType("double precision");
+                        .HasColumnType("float");
 
                     b.Property<double>("MinimumAmount")
-                        .HasColumnType("double precision");
+                        .HasColumnType("float");
 
                     b.HasKey("CouponId");
 
                     b.ToTable("Coupons");
+
+                    b.HasData(
+                        new
+                        {
+                            CouponId = 1,
+                            CouponCode = "10OFF",
+                            DiscountAmount = 10.0,
+                            MinimumAmount = 20.0
+                        },
+                        new
+                        {
+                            CouponId = 2,
+                            CouponCode = "20OFF",
+                            DiscountAmount = 20.0,
+                            MinimumAmount = 40.0
+                        });
                 });
 #pragma warning restore 612, 618
         }
