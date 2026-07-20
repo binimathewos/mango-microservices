@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -15,10 +14,10 @@ namespace Mango.Service.ShoppingCartApi.Migrations
                 name: "CartHeaders",
                 columns: table => new
                 {
-                    CartHeaderId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<string>(type: "text", nullable: true),
-                    CouponCode = table.Column<string>(type: "text", nullable: true)
+                    CartHeaderId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CouponCode = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -26,20 +25,20 @@ namespace Mango.Service.ShoppingCartApi.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "cartDetails",
+                name: "CartDetails",
                 columns: table => new
                 {
-                    CartDetailsId = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    CartHeaderId = table.Column<int>(type: "integer", nullable: false),
-                    ProductId = table.Column<int>(type: "integer", nullable: false),
-                    Count = table.Column<int>(type: "integer", nullable: false)
+                    CartDetailsId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CartHeaderId = table.Column<int>(type: "int", nullable: false),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    Count = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_cartDetails", x => x.CartDetailsId);
+                    table.PrimaryKey("PK_CartDetails", x => x.CartDetailsId);
                     table.ForeignKey(
-                        name: "FK_cartDetails_CartHeaders_CartHeaderId",
+                        name: "FK_CartDetails_CartHeaders_CartHeaderId",
                         column: x => x.CartHeaderId,
                         principalTable: "CartHeaders",
                         principalColumn: "CartHeaderId",
@@ -47,8 +46,8 @@ namespace Mango.Service.ShoppingCartApi.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_cartDetails_CartHeaderId",
-                table: "cartDetails",
+                name: "IX_CartDetails_CartHeaderId",
+                table: "CartDetails",
                 column: "CartHeaderId");
         }
 
@@ -56,7 +55,7 @@ namespace Mango.Service.ShoppingCartApi.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "cartDetails");
+                name: "CartDetails");
 
             migrationBuilder.DropTable(
                 name: "CartHeaders");
