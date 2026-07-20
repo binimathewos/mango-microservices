@@ -22,7 +22,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddControllers();
 
-builder.Services.AddScoped<IMessageBus, MessageBus>();
+builder.Services.AddScoped<IMessageBus>(_ =>
+    new MessageBus(builder.Configuration.GetValue<string>("ServiceBusConnectionString")));
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 

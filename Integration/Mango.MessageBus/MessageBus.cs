@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Azure.Messaging.ServiceBus;
 using Newtonsoft.Json;
 
@@ -6,9 +6,22 @@ namespace Mango.MessageBus;
 
 public class MessageBus : IMessageBus
 {
-    private string _connectionString = "Endpoint=sb://<your-namespace>.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=<your-shared-access-key>";
+    private readonly string? _connectionString;
+
+    public MessageBus(string? connectionString)
+    {
+        _connectionString = connectionString;
+    }
+
     public async Task PublishMessage(object message, string topic_queue_Name)
     {
+        // Service Bus not configured (missing or still a placeholder) — skip publishing
+        // so a missing messaging setup doesn't break the calling request.
+        if (string.IsNullOrWhiteSpace(_connectionString) || _connectionString.Contains("<your-namespace>"))
+        {
+            return;
+        }
+
         await using var client = new ServiceBusClient(_connectionString);
 
         ServiceBusSender sender = client.CreateSender(topic_queue_Name);
@@ -21,6 +34,5 @@ public class MessageBus : IMessageBus
         };
 
         await sender.SendMessageAsync(finalMessage);
-        await client.DisposeAsync();
     }
 }

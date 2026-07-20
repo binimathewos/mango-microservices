@@ -17,12 +17,14 @@ public class AuthApiController : ControllerBase
     private readonly IAuthService _authService;
     private readonly IMessageBus _messageBus;
     private IConfiguration _configuration;
+    private readonly ILogger<AuthApiController> _logger;
 
-    public AuthApiController(IAuthService authService, IMessageBus messageBus, IConfiguration configuration)
+    public AuthApiController(IAuthService authService, IMessageBus messageBus, IConfiguration configuration, ILogger<AuthApiController> logger)
     {
         _authService = authService;
         _messageBus = messageBus;
         _configuration = configuration;
+        _logger = logger;
 
         _response = new ResponseDto();
     }
@@ -38,8 +40,16 @@ public class AuthApiController : ControllerBase
             return BadRequest(_response);
         }
 
-        string topicAndQueueName = _configuration.GetValue<string>("TopicAndQueueNames:RegisterUserQueue")!;
-        await _messageBus.PublishMessage(registrationRequest.Email!, topicAndQueueName);
+        try
+        {
+            string topicAndQueueName = _configuration.GetValue<string>("TopicAndQueueNames:RegisterUserQueue")!;
+            await _messageBus.PublishMessage(registrationRequest.Email!, topicAndQueueName);
+        }
+        catch (Exception ex)
+        {
+            // Registration already succeeded; publishing the notification is best-effort.
+            _logger.LogError(ex, "User {Email} registered but publishing the registration message failed.", registrationRequest.Email);
+        }
 
         return Ok(_response);
     }
