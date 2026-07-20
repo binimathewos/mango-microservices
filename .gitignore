@@ -1,0 +1,31 @@
+# Build
+bin/
+obj/
+
+# VS Code
+.vscode/
+
+# Visual Studio
+.vs/
+
+# Rider
+.idea/
+
+# User files
+*.user
+*.suo
+
+# Logs
+*.log
+
+# NuGet
+packages/
+
+# Publish
+publish/
+
+# OS
+.DS_Store
+
+# Secrets
+appsettings.Development.json
