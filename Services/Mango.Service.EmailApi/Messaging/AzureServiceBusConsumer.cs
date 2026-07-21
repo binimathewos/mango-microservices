@@ -10,17 +10,23 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 {
     private readonly IConfiguration _configuration;
     private readonly EmailService _emailService;
-    private ServiceBusProcessor _emailCartProcessor;
-    private ServiceBusProcessor _registerUserProcessor;
-    private ServiceBusProcessor _orderProcessor;
+    private readonly ServiceBusProcessor? _emailCartProcessor;
+    private readonly ServiceBusProcessor? _registerUserProcessor;
+    private readonly ServiceBusProcessor? _orderProcessor;
 
     public AzureServiceBusConsumer(IConfiguration configuration, EmailService emailService)
     {
         _configuration = configuration;
-        string serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString")!;
-
-
         _emailService = emailService;
+
+        string? serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
+
+        // Service Bus not configured (missing or still a placeholder) — skip wiring up
+        // the processors so a missing messaging setup doesn't crash app startup.
+        if (string.IsNullOrWhiteSpace(serviceBusConnectionString) || serviceBusConnectionString.Contains("<your-namespace>"))
+        {
+            return;
+        }
 
         var client = new ServiceBusClient(serviceBusConnectionString);
 
@@ -37,6 +43,11 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 
     public async Task Start()
     {
+        if (_emailCartProcessor is null || _registerUserProcessor is null || _orderProcessor is null)
+        {
+            return;
+        }
+
         _emailCartProcessor.ProcessMessageAsync += OnEmailCartReceived;
         _emailCartProcessor.ProcessErrorAsync += OnEmailCartError;
         await _emailCartProcessor.StartProcessingAsync();
@@ -52,6 +63,11 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 
     public async Task Stop()
     {
+        if (_emailCartProcessor is null || _registerUserProcessor is null || _orderProcessor is null)
+        {
+            return;
+        }
+
         await _emailCartProcessor.StopProcessingAsync();
         await _emailCartProcessor.DisposeAsync();
 
