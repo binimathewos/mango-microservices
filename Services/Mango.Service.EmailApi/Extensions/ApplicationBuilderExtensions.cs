@@ -1,15 +1,14 @@
 using Mango.Service.EmailApi.Messaging;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Hosting.Internal;
 
 namespace Mango.Service.EmailApi.Extensions;
 
 public static class ApplicationBuilderExtensions
 {
-    private static IAzureServiceBusConsumer? AzureServiceBusConsumer { get; set; }
-    public static IApplicationBuilder UseAzureServiceBusConsumer(this IApplicationBuilder app)
+    private static IRabbitMqConsumer? RabbitMqConsumer { get; set; }
+
+    public static IApplicationBuilder UseRabbitMqConsumer(this IApplicationBuilder app)
     {
-        AzureServiceBusConsumer = app.ApplicationServices.GetService<IAzureServiceBusConsumer>();
+        RabbitMqConsumer = app.ApplicationServices.GetService<IRabbitMqConsumer>();
         IHostApplicationLifetime? applicationLifetime = app.ApplicationServices.GetService<IHostApplicationLifetime>();
 
         applicationLifetime?.ApplicationStarted.Register(OnStart);
@@ -20,11 +19,11 @@ public static class ApplicationBuilderExtensions
 
     private static void OnStop()
     {
-        AzureServiceBusConsumer?.Stop();
+        RabbitMqConsumer?.Stop().GetAwaiter().GetResult();
     }
 
     private static void OnStart()
     {
-        AzureServiceBusConsumer?.Start();
+        RabbitMqConsumer?.Start().GetAwaiter().GetResult();
     }
 }

@@ -49,7 +49,6 @@ public class CartController : Controller
             {
                 TempData["success"] = "Order Created Successfully!";
                 OrderHeaderDto? orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(responseDto.Result)!);
-
                 string domain = $"{Request.Scheme}://{Request.Host.Value}";
                 StripeRequestDto stripeRequestDto = new StripeRequestDto
                 {
@@ -59,7 +58,19 @@ public class CartController : Controller
                 };
 
                 ResponseDto? stripeResponseDto = await _orderService.CreateStripeSessionAsync(stripeRequestDto);
-                StripeRequestDto? stripeResponse = JsonConvert.DeserializeObject<StripeRequestDto>(Convert.ToString(stripeResponseDto?.Result)!);
+                if (stripeResponseDto == null || !stripeResponseDto.IsSuccess)
+                {
+                    TempData["error"] = stripeResponseDto?.DisplayMessage
+                        ?? "Unable to create Stripe session. Verify the Order API's Stripe:SecretKey is a real Stripe test key.";
+                    return View(await LoadLoggedInUserCart());
+                }
+
+                StripeRequestDto? stripeResponse = JsonConvert.DeserializeObject<StripeRequestDto>(Convert.ToString(stripeResponseDto.Result)!);
+                if (stripeResponse == null || string.IsNullOrEmpty(stripeResponse.StripeSessionUrl))
+                {
+                    TempData["error"] = "Stripe session was created but no redirect URL was returned.";
+                    return View(await LoadLoggedInUserCart());
+                }
 
                 Response.Headers.Add("Location", stripeResponse.StripeSessionUrl);
 
@@ -71,7 +82,7 @@ public class CartController : Controller
             TempData["error"] = ex.Message;
         }
 
-        return View();
+        return View(await LoadLoggedInUserCart());
     }
 
     [Authorize]

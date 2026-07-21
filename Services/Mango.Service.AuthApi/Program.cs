@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("ApiSettings:JwtOptions"));
 
@@ -23,7 +23,10 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 builder.Services.AddControllers();
 
 builder.Services.AddScoped<IMessageBus>(_ =>
-    new MessageBus(builder.Configuration.GetValue<string>("ServiceBusConnectionString")));
+    new MessageBus(
+        builder.Configuration.GetValue<string>("RabbitMq:HostName"),
+        builder.Configuration.GetValue<string>("RabbitMq:UserName"),
+        builder.Configuration.GetValue<string>("RabbitMq:Password")));
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 

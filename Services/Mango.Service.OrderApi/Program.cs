@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 SD.StripeApiKey = builder.Configuration["Stripe:SecretKey"] ?? string.Empty;
 
@@ -28,7 +28,10 @@ builder.Services.AddScoped<BackendApiAuthenticationHttpClientHandler>();
 
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IMessageBus>(_ =>
-    new MessageBus(builder.Configuration.GetValue<string>("ServiceBusConnectionString")));
+    new MessageBus(
+        builder.Configuration.GetValue<string>("RabbitMq:HostName"),
+        builder.Configuration.GetValue<string>("RabbitMq:UserName"),
+        builder.Configuration.GetValue<string>("RabbitMq:Password")));
 
 builder.Services.AddHttpClient("Product", client =>
 {

@@ -1,6 +1,6 @@
 namespace Mango.Service.RewardApi.Messaging;
 
-public interface IAzureServiceBusConsumer
+public interface IRabbitMqConsumer
 {
     Task Start();
     Task Stop();
