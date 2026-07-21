@@ -1,0 +1,42 @@
+name: Deploy Gateway to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Gateway/Mango.Gateway/**'
+      - '.github/workflows/deploy-gateway.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: addis-gateway
+  PROJECT_PATH: Gateway/Mango.Gateway/Mango.Gateway.csproj
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
+      - name: Build
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --no-build --output ${{ github.workspace }}/publish
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_GATEWAY_PUBLISH_PROFILE }}
+          package: ${{ github.workspace }}/publish
