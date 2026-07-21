@@ -10,16 +10,22 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 {
     private readonly IConfiguration _configuration;
     private readonly RewardsService _rewardsService;
-    private ServiceBusProcessor _rewardsProcessor;
+    private readonly ServiceBusProcessor? _rewardsProcessor;
 
 
     public AzureServiceBusConsumer(IConfiguration configuration, RewardsService rewardsService)
     {
         _configuration = configuration;
-        string serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString")!;
-
-
         _rewardsService = rewardsService;
+
+        string? serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
+
+        // Service Bus not configured (missing or still a placeholder) — skip wiring up
+        // the processor so a missing messaging setup doesn't crash app startup.
+        if (string.IsNullOrWhiteSpace(serviceBusConnectionString) || serviceBusConnectionString.Contains("<your-namespace>"))
+        {
+            return;
+        }
 
         var client = new ServiceBusClient(serviceBusConnectionString);
 
@@ -31,6 +37,11 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 
     public async Task Start()
     {
+        if (_rewardsProcessor is null)
+        {
+            return;
+        }
+
         _rewardsProcessor.ProcessMessageAsync += OnOrderRewardsReceived;
         _rewardsProcessor.ProcessErrorAsync += OnOrderRewardsError;
         await _rewardsProcessor.StartProcessingAsync();
@@ -38,6 +49,11 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 
     public async Task Stop()
     {
+        if (_rewardsProcessor is null)
+        {
+            return;
+        }
+
         await _rewardsProcessor.StopProcessingAsync();
         await _rewardsProcessor.DisposeAsync();
     }
