@@ -23,15 +23,18 @@ public class OrderController : ControllerBase
     private readonly IProductService _productService;
     private readonly IMessageBus _messageBus;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<OrderController> _logger;
 
     public OrderController(AppDbContext dbContext, IMapper mapper,
-        IProductService productService, IMessageBus messageBus, IConfiguration confguration)
+        IProductService productService, IMessageBus messageBus, IConfiguration confguration,
+        ILogger<OrderController> logger)
     {
         _dbContext = dbContext;
         _mapper = mapper;
         _productService = productService;
         _messageBus = messageBus;
         _configuration = confguration;
+        _logger = logger;
 
         _response = new ResponseDto();
     }
@@ -61,6 +64,7 @@ public class OrderController : ControllerBase
         }
         catch (System.Exception ex)
         {
+            _logger.LogError(ex, "OrderApi request failed");
             _response.IsSuccess = false;
             _response.DisplayMessage = GetAllExceptionMessages(ex);
         }
@@ -86,6 +90,7 @@ public class OrderController : ControllerBase
         }
         catch (System.Exception ex)
         {
+            _logger.LogError(ex, "OrderApi request failed");
             _response.IsSuccess = false;
             _response.DisplayMessage = GetAllExceptionMessages(ex);
         }
@@ -111,9 +116,14 @@ public class OrderController : ControllerBase
             orderHeaderDto.OrderHeaderId = order.OrderHeaderId;
 
             _response.Result = orderHeaderDto;
+
+            _logger.LogInformation(
+                "OrderCreated OrderId={OrderId} UserId={UserId} Total={Total} Items={Items}",
+                order.OrderHeaderId, orderHeaderDto.UserId, orderHeaderDto.OrderTotal, orderHeaderDto.OrderDetails?.Count());
         }
         catch (System.Exception ex)
         {
+            _logger.LogError(ex, "OrderApi request failed");
             _response.IsSuccess = false;
             _response.DisplayMessage = GetAllExceptionMessages(ex);
         }
@@ -178,9 +188,13 @@ public class OrderController : ControllerBase
 
             _response.Result = stripeRequestDto;
 
+            _logger.LogInformation(
+                "StripeSessionCreated OrderId={OrderId} SessionId={SessionId}",
+                stripeRequestDto.OrderHeader.OrderHeaderId, session.Id);
         }
         catch (System.Exception ex)
         {
+            _logger.LogError(ex, "OrderApi request failed");
             _response.IsSuccess = false;
             _response.DisplayMessage = GetAllExceptionMessages(ex);
         }
@@ -220,6 +234,16 @@ public class OrderController : ControllerBase
 
                 string topicName = _configuration.GetValue<string>("TopicAndQueueNames:OrderCreatedTopic");
                 await _messageBus.PublishMessage(rewardsDto, topicName);
+
+                _logger.LogInformation(
+                    "PaymentSucceeded OrderId={OrderId} Total={Total}",
+                    orderHeader.OrderHeaderId, orderHeader.OrderTotal);
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "PaymentNotCompleted OrderId={OrderId} Status={Status}",
+                    orderHeader.OrderHeaderId, paymentIntent.Status);
             }
 
             _response.Result = _mapper.Map<OrderHeaderDto>(orderHeader);
@@ -227,6 +251,7 @@ public class OrderController : ControllerBase
         }
         catch (System.Exception ex)
         {
+            _logger.LogError(ex, "OrderApi request failed");
             _response.IsSuccess = false;
             _response.DisplayMessage = GetAllExceptionMessages(ex);
         }
@@ -269,6 +294,7 @@ public class OrderController : ControllerBase
         }
         catch (System.Exception ex)
         {
+            _logger.LogError(ex, "OrderApi request failed");
             _response.IsSuccess = false;
             _response.DisplayMessage = GetAllExceptionMessages(ex);
         }

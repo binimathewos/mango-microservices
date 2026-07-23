@@ -10,13 +10,15 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 {
     private readonly IConfiguration _configuration;
     private readonly RewardsService _rewardsService;
+    private readonly ILogger<AzureServiceBusConsumer> _logger;
     private readonly ServiceBusProcessor? _rewardsProcessor;
 
 
-    public AzureServiceBusConsumer(IConfiguration configuration, RewardsService rewardsService)
+    public AzureServiceBusConsumer(IConfiguration configuration, RewardsService rewardsService, ILogger<AzureServiceBusConsumer> logger)
     {
         _configuration = configuration;
         _rewardsService = rewardsService;
+        _logger = logger;
 
         string? serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
 
@@ -60,7 +62,7 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 
     private Task OnOrderRewardsError(ProcessErrorEventArgs args)
     {
-        Console.WriteLine(args.Exception.ToString());
+        _logger.LogError(args.Exception, "Service Bus error on order-created rewards subscription (source: {ErrorSource})", args.ErrorSource);
         return Task.CompletedTask;
     }
 
@@ -76,8 +78,9 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
             await _rewardsService.UpdateRewards(rewardsDto);
             await args.CompleteMessageAsync(args.Message);
         }
-        catch (System.Exception)
+        catch (System.Exception ex)
         {
+            _logger.LogError(ex, "Failed to process order-created rewards message {MessageId}", message.MessageId);
             throw;
         }
     }

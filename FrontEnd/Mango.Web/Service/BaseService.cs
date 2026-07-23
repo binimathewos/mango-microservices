@@ -14,11 +14,13 @@ namespace Mango.Web.Service
     {
         private readonly IHttpClientFactory _httpClient;
         private readonly ITokenProvider _tokenProvider;
+        private readonly ILogger<BaseService> _logger;
 
-        public BaseService(IHttpClientFactory httpClient, ITokenProvider tokenProvider)
+        public BaseService(IHttpClientFactory httpClient, ITokenProvider tokenProvider, ILogger<BaseService> logger)
         {
             _httpClient = httpClient;
             _tokenProvider = tokenProvider;
+            _logger = logger;
         }
 
         public async Task<ResponseDto?> SendAsync(RequestDto requestDto, bool withBearer = true)
@@ -114,6 +116,7 @@ namespace Mango.Web.Service
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Downstream call failed: {Method} {Url}", requestDto.ApiType, requestDto.Url);
                 var dto = new ResponseDto
                 {
                     IsSuccess = false,

@@ -35,10 +35,13 @@ public class AuthApiController : ControllerBase
         var errorMessage = await _authService.RegisterAsync(registrationRequest);
         if (!string.IsNullOrEmpty(errorMessage))
         {
+            _logger.LogWarning("UserRegistrationFailed Email={Email} Reason={Reason}", registrationRequest.Email, errorMessage);
             _response.IsSuccess = false;
             _response.DisplayMessage = errorMessage;
             return BadRequest(_response);
         }
+
+        _logger.LogInformation("UserRegistered Email={Email}", registrationRequest.Email);
 
         try
         {
@@ -60,11 +63,13 @@ public class AuthApiController : ControllerBase
         var loginResponse = await _authService.LoginAsync(loginRequest);
         if (loginResponse.User == null)
         {
+            _logger.LogWarning("LoginFailed UserName={UserName}", loginRequest.UserName);
             _response.IsSuccess = false;
             _response.DisplayMessage = "Username or password is incorrect";
             return BadRequest(_response);
         }
 
+        _logger.LogInformation("LoginSucceeded UserName={UserName}", loginRequest.UserName);
         _response.Result = loginResponse;
         return Ok(_response);
     }

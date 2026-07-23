@@ -10,14 +10,16 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 {
     private readonly IConfiguration _configuration;
     private readonly EmailService _emailService;
+    private readonly ILogger<AzureServiceBusConsumer> _logger;
     private readonly ServiceBusProcessor? _emailCartProcessor;
     private readonly ServiceBusProcessor? _registerUserProcessor;
     private readonly ServiceBusProcessor? _orderProcessor;
 
-    public AzureServiceBusConsumer(IConfiguration configuration, EmailService emailService)
+    public AzureServiceBusConsumer(IConfiguration configuration, EmailService emailService, ILogger<AzureServiceBusConsumer> logger)
     {
         _configuration = configuration;
         _emailService = emailService;
+        _logger = logger;
 
         string? serviceBusConnectionString = _configuration.GetValue<string>("ServiceBusConnectionString");
 
@@ -80,7 +82,7 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
 
     private Task OnEmailCartError(ProcessErrorEventArgs args)
     {
-        Console.WriteLine(args.Exception.ToString());
+        _logger.LogError(args.Exception, "Service Bus error on email-cart queue (source: {ErrorSource})", args.ErrorSource);
         return Task.CompletedTask;
     }
 
@@ -96,15 +98,16 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
             await _emailService.EmailCartAndLog(cartDto);
             await args.CompleteMessageAsync(args.Message);
         }
-        catch (System.Exception)
+        catch (System.Exception ex)
         {
+            _logger.LogError(ex, "Failed to process email-cart message {MessageId}", message.MessageId);
             throw;
         }
     }
 
     private Task OnRegisterUserError(ProcessErrorEventArgs args)
     {
-        Console.WriteLine(args.Exception.ToString());
+        _logger.LogError(args.Exception, "Service Bus error on register-user queue (source: {ErrorSource})", args.ErrorSource);
         return Task.CompletedTask;
     }
 
@@ -121,15 +124,16 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
             await args.CompleteMessageAsync(args.Message);
 
         }
-        catch (System.Exception)
+        catch (System.Exception ex)
         {
+            _logger.LogError(ex, "Failed to process register-user message {MessageId}", args.Message.MessageId);
             throw;
         }
     }
 
     private Task OnOrderCreatedError(ProcessErrorEventArgs args)
     {
-        Console.WriteLine(args.Exception.ToString());
+        _logger.LogError(args.Exception, "Service Bus error on order-created subscription (source: {ErrorSource})", args.ErrorSource);
         return Task.CompletedTask;
     }
 
@@ -145,8 +149,9 @@ public class AzureServiceBusConsumer : IAzureServiceBusConsumer
             await _emailService.LogOrderPlaced(rewardsDto);
             await args.CompleteMessageAsync(args.Message);
         }
-        catch (System.Exception)
+        catch (System.Exception ex)
         {
+            _logger.LogError(ex, "Failed to process order-created message {MessageId}", args.Message.MessageId);
             throw;
         }
     }

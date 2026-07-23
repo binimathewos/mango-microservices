@@ -13,11 +13,13 @@ public class CartController : Controller
 {
     private readonly ICartService _cartService;
     private readonly IOrderService _orderService;
+    private readonly ILogger<CartController> _logger;
 
-    public CartController(ICartService cartService, IOrderService orderService)
+    public CartController(ICartService cartService, IOrderService orderService, ILogger<CartController> logger)
     {
         _cartService = cartService;
         _orderService = orderService;
+        _logger = logger;
     }
 
     [Authorize]
@@ -50,6 +52,10 @@ public class CartController : Controller
                 TempData["success"] = "Order Created Successfully!";
                 OrderHeaderDto? orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(responseDto.Result)!);
 
+                _logger.LogInformation(
+                    "OrderPlaced OrderId={OrderId} Total={CartTotal} Items={ItemCount}",
+                    orderHeaderDto?.OrderHeaderId, dbCart.CartHeader?.CartTotal, dbCart.CartDetails?.Count());
+
                 string domain = $"{Request.Scheme}://{Request.Host.Value}";
                 StripeRequestDto stripeRequestDto = new StripeRequestDto
                 {
@@ -68,6 +74,7 @@ public class CartController : Controller
         }
         catch (System.Exception ex)
         {
+            _logger.LogError(ex, "Checkout failed during order/payment processing");
             TempData["error"] = ex.Message;
         }
 
