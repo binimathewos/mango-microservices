@@ -7,6 +7,9 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Application Insights — reads APPLICATIONINSIGHTS_CONNECTION_STRING from config/env.
+builder.Services.AddApplicationInsightsTelemetry();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

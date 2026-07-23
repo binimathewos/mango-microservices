@@ -9,6 +9,9 @@ using Mango.MessageBus;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Application Insights — reads APPLICATIONINSIGHTS_CONNECTION_STRING from config/env.
+builder.Services.AddApplicationInsightsTelemetry();
+
 // Add services to the container.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

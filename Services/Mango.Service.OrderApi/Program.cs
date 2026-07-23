@@ -12,6 +12,9 @@ using Mango.MessageBus;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Application Insights — reads APPLICATIONINSIGHTS_CONNECTION_STRING from config/env.
+builder.Services.AddApplicationInsightsTelemetry();
+
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddDbContext<AppDbContext>(options =>
