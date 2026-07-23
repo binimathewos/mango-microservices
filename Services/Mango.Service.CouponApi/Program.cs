@@ -21,6 +21,9 @@ builder.Services.AddApplicationInsightsTelemetry();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>();
+
 SD.StripeApiKey = builder.Configuration["Stripe:SecretKey"] ?? string.Empty;
 
 IMapper mapper = MappingConfig.RegisterMaps().CreateMapper();
@@ -78,6 +81,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHealthChecks("/health");
+
 ApplyMigration();
 app.Run();
 
